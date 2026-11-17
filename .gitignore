@@ -44,3 +44,6 @@ dist/
 dist-web/
 dist-android/
 .env
+
+# Claude Code settings (local only)
+.claude/
