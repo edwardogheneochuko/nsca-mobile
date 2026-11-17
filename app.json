@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "nsca-frontend",
+    "name": "NSCA Disease Check",
     "slug": "nsca-frontend",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -19,7 +19,16 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "scheme": "nsca",
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
