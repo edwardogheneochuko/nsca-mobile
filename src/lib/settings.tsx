@@ -23,6 +23,17 @@ export function defaultApiUrl(): string {
   return Platform.OS === "android" ? "http://10.0.2.2:8000" : "http://localhost:8000";
 }
 
+/** A laptop / emulator address saved during local development. */
+const isLocalUrl = (u: string) =>
+  /^https?:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?\/?$/i.test(u.trim());
+
+/** Saved address, unless it is a stale local one and the build names a hosted backend. */
+function savedApiUrl(saved: unknown): string | null {
+  if (typeof saved !== "string" || !saved.trim()) return null;
+  if (process.env.EXPO_PUBLIC_API_URL && isLocalUrl(saved)) return null;
+  return saved.trim();
+}
+
 interface Settings {
   apiUrl: string;
   dataset: Dataset;
@@ -57,15 +68,23 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const raw = await AsyncStorage.getItem(KEY);
-        if (raw) setS((cur) => ({ ...cur, ...JSON.parse(raw) }));
+        if (raw) {
+          const saved = JSON.parse(raw);
+          setS((cur) => ({
+            apiUrl: savedApiUrl(saved.apiUrl) ?? cur.apiUrl,
+            dataset: saved.dataset ?? cur.dataset,
+          }));
+        }
       } catch {}
       setReady(true);
     })();
   }, []);
 
+  // Only an address the user typed is saved; otherwise the build's default (.env) keeps applying.
   const save = (next: Settings) => {
     setS(next);
-    AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {});
+    const apiUrl = next.apiUrl === defaultApiUrl() ? undefined : next.apiUrl;
+    AsyncStorage.setItem(KEY, JSON.stringify({ dataset: next.dataset, apiUrl })).catch(() => {});
   };
 
   const value = useMemo<Ctx>(
