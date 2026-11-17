@@ -8,12 +8,16 @@ import type { Dataset, IdentifyResult } from "./api";
 
 const KEY = "nsca.settings.v1";
 
+/** Hosted backend, used by a deployed website built without EXPO_PUBLIC_API_URL. */
+const HOSTED_API_URL = "https://nsca.onrender.com";
+
 /** Best guess for the backend address before the user sets one. */
 export function defaultApiUrl(): string {
   const env = process.env.EXPO_PUBLIC_API_URL;
   if (env) return env;
   if (Platform.OS === "web") {
     const host = typeof window !== "undefined" ? window.location.hostname : "localhost";
+    if (host && !isLocalUrl(`http://${host}`)) return HOSTED_API_URL;
     return `http://${host || "localhost"}:8000`;
   }
   // In Expo Go the dev server runs on the laptop; the backend is usually on the same machine.
@@ -27,10 +31,10 @@ export function defaultApiUrl(): string {
 const isLocalUrl = (u: string) =>
   /^https?:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?\/?$/i.test(u.trim());
 
-/** Saved address, unless it is a stale local one and the build names a hosted backend. */
+/** Saved address, unless it is a stale local one and the default is a hosted backend. */
 function savedApiUrl(saved: unknown): string | null {
   if (typeof saved !== "string" || !saved.trim()) return null;
-  if (process.env.EXPO_PUBLIC_API_URL && isLocalUrl(saved)) return null;
+  if (isLocalUrl(saved) && !isLocalUrl(defaultApiUrl())) return null;
   return saved.trim();
 }
 
